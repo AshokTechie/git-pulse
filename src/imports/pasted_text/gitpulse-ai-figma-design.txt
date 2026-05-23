@@ -1,0 +1,468 @@
+Create a complete high-fidelity Figma UI/UX design for a modern SaaS platform called “GitPulse AI” or “GitScope Analytics”.
+
+This platform is an advanced GitHub Analytics Dashboard that analyzes:
+
+* GitHub contributions
+* Repository activity
+* Developer productivity
+* Code patterns
+* Engineering insights
+* Team collaboration
+* Repository health scoring
+* AI-powered developer analytics
+
+Design style:
+
+* Premium SaaS product
+* Enterprise-grade
+* Developer-focused
+* Minimal and modern
+* Dark mode first
+* Inspired by Linear, GitHub, Vercel, Raycast, Supabase, Stripe
+* Clean layouts with large spacing
+* Glassmorphism cards
+* Soft shadows
+* Smooth gradients
+* Highly polished dashboards
+* Modern typography
+* Rich data visualization
+* Pixel-perfect UI
+
+Use:
+
+* Inter font
+* JetBrains Mono for code/data sections
+
+Color palette:
+
+* Dark charcoal background
+* Neutral grays
+* GitHub green accents
+* Purple and blue highlights
+* Cyan analytics glow
+* Avoid oversaturated colors
+
+Create complete responsive screens for:
+
+* Desktop
+* Tablet
+* Mobile
+
+The design must include all modules below without missing anything.
+
+---
+
+1. Landing Page
+
+---
+
+Create:
+
+* Hero section
+* Product demo preview
+* Feature showcase
+* Analytics screenshots
+* AI insights section
+* Pricing section
+* Testimonials
+* Enterprise section
+* CTA sections
+* Footer
+
+Hero headline example:
+“Understand Your Engineering Team Like Never Before”
+
+Include:
+
+* Animated dashboard preview
+* Contribution heatmap preview
+* Repo health score preview
+* AI analytics assistant
+
+---
+
+2. GitHub OAuth Authentication
+
+---
+
+Design:
+
+* Login page
+* GitHub OAuth authorization
+* Permissions screen
+* Multi-account connection
+* Session management UI
+* Loading states
+* Error states
+
+---
+
+3. Main Analytics Dashboard
+
+---
+
+Create a rich dashboard with:
+
+* Sidebar navigation
+* Top navigation bar
+* Workspace switcher
+* Search bar
+* Notification center
+* AI assistant button
+* Profile dropdown
+
+Dashboard cards:
+
+* Total contributions
+* Weekly commits
+* Pull requests merged
+* Active repositories
+* Open issues
+* Team productivity score
+* AI engineering score
+
+Include:
+
+* KPI cards
+* Trend arrows
+* Interactive charts
+* Real-time updates
+
+---
+
+4. Contribution Analytics
+
+---
+
+Design:
+
+* GitHub-style contribution heatmap
+* Daily activity charts
+* Weekly productivity charts
+* Monthly contribution trends
+* Commit streak cards
+* Peak productivity analysis
+* Contribution timeline
+* Active coding hours heatmap
+
+Charts:
+
+* Area charts
+* Heatmaps
+* Scatter plots
+* Time-series graphs
+
+---
+
+5. Repository Analytics
+
+---
+
+Create analytics screens for:
+
+* Commit activity
+* PR trends
+* Issue tracking
+* Release analytics
+* Fork growth
+* Star growth
+* Deployment frequency
+* Branch activity
+
+Include:
+
+* Repo comparison tables
+* Interactive graphs
+* Drill-down analytics
+* Repo filtering system
+
+---
+
+6. Repository Health Score
+
+---
+
+Design a premium health scoring system with:
+
+* Overall repo health meter
+* Circular score charts
+* Radar charts
+* Trend indicators
+
+Metrics:
+
+* Code quality
+* CI/CD health
+* PR response time
+* Technical debt
+* Security alerts
+* Test coverage
+* Documentation quality
+* Dependency freshness
+* Bus factor
+* Code churn
+* Stability score
+* Velocity score
+
+Include:
+
+* Weighted score breakdown UI
+* AI recommendations panel
+
+---
+
+7. Developer Insights
+
+---
+
+Design detailed developer analytics:
+
+* Contributor leaderboard
+* Productivity analytics
+* Review participation
+* Coding consistency
+* Team collaboration score
+* Burnout risk indicators
+* Workload distribution
+* Coding behavior analysis
+
+Include:
+
+* Team comparison charts
+* Collaboration graphs
+* Network visualization
+* Productivity heatmaps
+
+---
+
+8. Code Pattern Analysis
+
+---
+
+Create advanced analysis pages for:
+
+* Static code analysis
+* Architecture visualization
+* File hotspot maps
+* Complexity analysis
+* Code duplication metrics
+* AI code recommendations
+* Refactor suggestions
+
+Visuals:
+
+* Tree maps
+* Dependency graphs
+* AST visualizations
+* Architecture diagrams
+
+---
+
+9. AI Insights & Predictions
+
+---
+
+Design AI-powered sections:
+
+* AI repo summaries
+* PR risk prediction
+* Commit intent analysis
+* Contributor ranking
+* Smart anomaly detection
+* Engineering velocity prediction
+* AI recommendation feed
+* Natural language analytics assistant
+
+Create:
+
+* AI chat assistant UI
+* Insight cards
+* Prediction dashboards
+* AI recommendation widgets
+
+---
+
+10. Team Collaboration Dashboard
+
+---
+
+Design:
+
+* Team productivity tracking
+* Sprint analytics
+* Collaboration strength maps
+* PR review network
+* Ownership mapping
+* Team contribution balance
+* Engineering efficiency metrics
+
+---
+
+11. Real-Time Monitoring
+
+---
+
+Include:
+
+* Live commit feed
+* Deployment monitoring
+* CI/CD live status
+* Webhook event streams
+* Background job status
+* Queue monitoring
+* API rate limit tracking
+
+---
+
+12. Advanced Filtering & Search
+
+---
+
+Design:
+
+* Smart filters
+* Query builder
+* Saved views
+* Advanced search
+* Date filtering
+* Language filtering
+* Team filtering
+* Repository filtering
+
+---
+
+13. Security Dashboard
+
+---
+
+Create:
+
+* Token management
+* Permission control
+* Security vulnerabilities
+* Audit logs
+* Secret scanning
+* Access monitoring
+* OAuth settings
+
+---
+
+14. Developer Experience Features
+
+---
+
+Include:
+
+* Command palette
+* Keyboard shortcut modal
+* Empty states
+* Skeleton loaders
+* Toast notifications
+* Error handling UI
+* Retry states
+* Infinite scrolling
+* Pagination
+* Hover interactions
+* Context menus
+* Drag-and-drop widgets
+
+---
+
+15. Mobile Experience
+
+---
+
+Create:
+
+* Mobile responsive dashboards
+* Swipe interactions
+* Mobile charts
+* Compact KPI cards
+* Bottom navigation
+* Touch-friendly layouts
+
+---
+
+16. Settings & Preferences
+
+---
+
+Design:
+
+* Theme settings
+* Dashboard customization
+* Widget controls
+* Notification settings
+* API token settings
+* Workspace settings
+
+---
+
+17. SaaS Business Screens
+
+---
+
+Create:
+
+* Pricing page
+* Billing dashboard
+* Subscription management
+* Team plans
+* Enterprise analytics plan
+* Usage tracking
+
+---
+
+18. Design System
+
+---
+
+Create a complete design system with:
+
+* Typography scale
+* Color tokens
+* Grid system
+* Spacing system
+* Icon library
+* Buttons
+* Inputs
+* Cards
+* Tables
+* Modals
+* Charts
+* Dropdowns
+* Tabs
+* Navigation components
+
+---
+
+19. Technical Feel
+
+---
+
+The product should feel:
+
+* Fast
+* Data-heavy
+* AI-powered
+* Enterprise-grade
+* Built for engineers
+* Similar quality to GitHub Enterprise, Datadog, Linear, and Vercel Analytics
+
+---
+
+20. Output Requirements
+
+---
+
+Generate:
+
+* Multiple polished Figma pages
+* Reusable components
+* Auto-layout support
+* Design tokens
+* Component variants
+* High-fidelity mockups
+* Modern animations
+* Interactive prototypes
+* Production-ready UI system
