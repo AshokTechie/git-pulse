@@ -8,7 +8,7 @@ const logger = createLogger('auth-service');
 
 const SESSION_TTL_DAYS = 30;
 
-export async function completeOAuthCallback(code: string): Promise<{ sessionToken: string; user: { id: string; githubId: number; login: string } }> {
+export async function completeOAuthCallback(code: string): Promise<{ sessionToken: string; user: { id: string; githubId?: number | null; login?: string | null } }> {
   const { accessToken } = await exchangeCodeForToken(code);
   const client = new GitHubClient(accessToken);
   const ghUser = await fetchGitHubUser(client);
@@ -56,7 +56,7 @@ export async function completeOAuthCallback(code: string): Promise<{ sessionToke
   });
 
   const sessionToken = await createSession(user.id);
-  return { sessionToken, user: { id: user.id, githubId: user.githubId, login: user.login } };
+  return { sessionToken, user: { id: user.id, githubId: user.githubId, login: user.githubLogin } };
 }
 
 export async function createSession(userId: string): Promise<string> {
@@ -102,41 +102,38 @@ export async function getCurrentUser(userId: string) {
 }
 
 /**
- * Development-only login: creates a User with a GitHubAccount backed by an
- * empty token and kicks off seeding for the demo repositories. Enabled only
- * when ALLOW_DEV_AUTH=true.
+ * Development-only login: creates or retrieves a User with a GitHubAccount.
  */
 export async function createDevSession(login: string): Promise<{ sessionToken: string; userId: string }> {
-  const ghId = 61781234; // deterministic pseudo id for dev accounts
-  const user = await prisma.user.upsert({
-    where: { githubId: ghId },
-    update: { githubLogin: login, name: 'Dev Operator', avatarUrl: null },
-    create: {
-      githubId: ghId,
-      githubLogin: login,
-      name: 'Dev Operator',
-      email: null,
-      avatarUrl: null,
+  let user = await prisma.user.findFirst({
+    where: {
+      OR: [{ githubLogin: login }, { email: `${login}@github.com` }],
     },
   });
 
-  const exists = await prisma.gitHubAccount.findUnique({ where: { githubId: ghId } });
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        githubLogin: login,
+        name: 'The Octocat',
+        email: `${login}@github.com`,
+        avatarUrl: 'https://avatars.githubusercontent.com/u/583231?v=4',
+      },
+    });
+  }
+
+  const exists = await prisma.gitHubAccount.findFirst({ where: { userId: user.id } });
   if (!exists) {
     await prisma.gitHubAccount.create({
       data: {
         userId: user.id,
-        githubId: ghId,
-        login,
-        name: 'Dev Operator',
+        githubId: user.githubId || 583231,
+        login: user.githubLogin || login,
+        name: user.name || 'The Octocat',
         accessTokenEncrypted: encryptSecret('dev-no-op'),
         tokenType: 'dev',
         scope: 'dev',
       },
-    });
-  } else {
-    await prisma.gitHubAccount.update({
-      where: { githubId: ghId },
-      data: { userId: user.id, login },
     });
   }
 
