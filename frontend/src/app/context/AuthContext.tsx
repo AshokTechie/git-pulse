@@ -1,4 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  fetchRepositories as apiFetchRepos,
+  authDemoLogin,
+  authEmailLogin,
+  authEmailRegister,
+  authMe,
+  authLogout,
+} from '../../lib/api';
 
 export interface GitHubUser {
   id: number;
@@ -32,15 +40,20 @@ interface AuthState {
   selectedRepo: Repository | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isDemoMode: boolean;
 }
 
 interface AuthContextType extends AuthState {
   login: () => Promise<void>;
+  loginDemo: () => Promise<void>;
+  loginWithEmail: (email: string, pass: string) => Promise<void>;
+  registerWithEmail: (email: string, pass: string, name?: string) => Promise<void>;
   logout: () => void;
   selectRepository: (repo: Repository) => void;
   repositories: Repository[];
   fetchRepositories: () => Promise<void>;
   reposLoading: boolean;
+  toggleDemoMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -54,7 +67,7 @@ const MOCK_USER: GitHubUser = {
   public_repos: 8,
   followers: 14204,
   following: 9,
-  email: null,
+  email: 'octocat@github.com',
 };
 
 const MOCK_REPOS: Repository[] = [
@@ -110,58 +123,6 @@ const MOCK_REPOS: Repository[] = [
     private: false,
     default_branch: 'main',
   },
-  {
-    id: 5,
-    name: 'design-system',
-    full_name: 'octocat/design-system',
-    description: 'Company-wide design system and component library',
-    language: 'TypeScript',
-    stargazers_count: 421,
-    forks_count: 44,
-    open_issues_count: 3,
-    updated_at: '2026-05-25T16:00:00Z',
-    private: true,
-    default_branch: 'main',
-  },
-  {
-    id: 6,
-    name: 'devops-toolkit',
-    full_name: 'octocat/devops-toolkit',
-    description: 'Collection of DevOps scripts and automation tools',
-    language: 'Shell',
-    stargazers_count: 189,
-    forks_count: 32,
-    open_issues_count: 6,
-    updated_at: '2026-05-24T08:30:00Z',
-    private: false,
-    default_branch: 'main',
-  },
-  {
-    id: 7,
-    name: 'auth-service',
-    full_name: 'octocat/auth-service',
-    description: 'OAuth 2.0 and JWT authentication microservice',
-    language: 'Rust',
-    stargazers_count: 731,
-    forks_count: 88,
-    open_issues_count: 14,
-    updated_at: '2026-05-23T20:10:00Z',
-    private: true,
-    default_branch: 'main',
-  },
-  {
-    id: 8,
-    name: 'data-lake',
-    full_name: 'octocat/data-lake',
-    description: 'Scalable data lake infrastructure on AWS S3 and Glue',
-    language: 'Python',
-    stargazers_count: 294,
-    forks_count: 41,
-    open_issues_count: 9,
-    updated_at: '2026-05-22T13:45:00Z',
-    private: false,
-    default_branch: 'main',
-  },
 ];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -171,50 +132,163 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     selectedRepo: null,
     isAuthenticated: false,
     isLoading: true,
+    isDemoMode: true,
   });
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [reposLoading, setReposLoading] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('gitpulse_auth');
-    if (stored) {
+    async function initAuth() {
       try {
-        const parsed = JSON.parse(stored);
-        setState({ ...parsed, isLoading: false });
+        const me = await authMe().catch(() => null);
+        if (me && me.sessionValid && me.user) {
+          const user: GitHubUser = {
+            id: me.user.githubId || 101,
+            login: me.user.githubLogin || me.user.name || 'user',
+            name: me.user.name || me.user.githubLogin || 'User',
+            avatar_url: me.user.avatarUrl || MOCK_USER.avatar_url,
+            bio: 'GitPulse Connected Developer',
+            public_repos: 12,
+            followers: 120,
+            following: 15,
+            email: me.user.email,
+          };
+          setState((s) => ({
+            ...s,
+            user,
+            isAuthenticated: true,
+            isLoading: false,
+            isDemoMode: false,
+          }));
+          return;
+        }
       } catch {
-        setState(s => ({ ...s, isLoading: false }));
+        // Fallback to local storage
       }
-    } else {
-      setState(s => ({ ...s, isLoading: false }));
+
+      const stored = localStorage.getItem('gitpulse_auth');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setState({ ...parsed, isLoading: false });
+        } catch {
+          setState((s) => ({ ...s, isLoading: false }));
+        }
+      } else {
+        setState((s) => ({ ...s, isLoading: false }));
+      }
     }
+
+    initAuth();
   }, []);
 
   const login = async () => {
-    setState(s => ({ ...s, isLoading: true }));
-    // Simulate OAuth redirect + token exchange delay
-    await new Promise(res => setTimeout(res, 1800));
-    const token = 'ghp_mock_token_' + Math.random().toString(36).slice(2);
-    const newState = {
+    setState((s) => ({ ...s, isLoading: true }));
+    try {
+      window.location.href = '/api/auth/github';
+    } catch {
+      await loginDemo();
+    }
+  };
+
+  const loginDemo = async () => {
+    setState((s) => ({ ...s, isLoading: true }));
+    try {
+      await authDemoLogin().catch(() => null);
+    } catch {
+      // Ignore if offline
+    }
+    const token = 'ghp_demo_token_' + Math.random().toString(36).slice(2);
+    const newState: AuthState = {
       user: MOCK_USER,
       token,
       selectedRepo: null,
       isAuthenticated: true,
       isLoading: false,
+      isDemoMode: true,
+    };
+    setState(newState);
+    localStorage.setItem('gitpulse_auth', JSON.stringify(newState));
+  };
+
+  const loginWithEmail = async (email: string, pass: string) => {
+    setState((s) => ({ ...s, isLoading: true }));
+    const res = await authEmailLogin(email, pass);
+    const user: GitHubUser = {
+      id: 999,
+      login: res.user?.login || email.split('@')[0],
+      name: res.user?.name || email.split('@')[0],
+      avatar_url: MOCK_USER.avatar_url,
+      bio: 'GitPulse Registered Engineer',
+      public_repos: 8,
+      followers: 12,
+      following: 5,
+      email: res.user?.email || email,
+    };
+    const newState: AuthState = {
+      user,
+      token: 'session_token',
+      selectedRepo: null,
+      isAuthenticated: true,
+      isLoading: false,
+      isDemoMode: false,
+    };
+    setState(newState);
+    localStorage.setItem('gitpulse_auth', JSON.stringify(newState));
+  };
+
+  const registerWithEmail = async (email: string, pass: string, name?: string) => {
+    setState((s) => ({ ...s, isLoading: true }));
+    const res = await authEmailRegister(email, pass, name);
+    const user: GitHubUser = {
+      id: 999,
+      login: res.user?.login || email.split('@')[0],
+      name: res.user?.name || name || email.split('@')[0],
+      avatar_url: MOCK_USER.avatar_url,
+      bio: 'GitPulse Registered Engineer',
+      public_repos: 8,
+      followers: 12,
+      following: 5,
+      email: res.user?.email || email,
+    };
+    const newState: AuthState = {
+      user,
+      token: 'session_token',
+      selectedRepo: null,
+      isAuthenticated: true,
+      isLoading: false,
+      isDemoMode: false,
     };
     setState(newState);
     localStorage.setItem('gitpulse_auth', JSON.stringify(newState));
   };
 
   const logout = () => {
-    const reset = { user: null, token: null, selectedRepo: null, isAuthenticated: false, isLoading: false };
+    authLogout().catch(() => null);
+    const reset: AuthState = {
+      user: null,
+      token: null,
+      selectedRepo: null,
+      isAuthenticated: false,
+      isLoading: false,
+      isDemoMode: false,
+    };
     setState(reset);
     setRepositories([]);
     localStorage.removeItem('gitpulse_auth');
   };
 
   const selectRepository = (repo: Repository) => {
-    setState(s => {
+    setState((s) => {
       const next = { ...s, selectedRepo: repo };
+      localStorage.setItem('gitpulse_auth', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const toggleDemoMode = () => {
+    setState((s) => {
+      const next = { ...s, isDemoMode: !s.isDemoMode };
       localStorage.setItem('gitpulse_auth', JSON.stringify(next));
       return next;
     });
@@ -222,14 +296,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchRepositories = async () => {
     setReposLoading(true);
-    // Simulate GitHub API call
-    await new Promise(res => setTimeout(res, 1200));
+    try {
+      const serverRepos = await apiFetchRepos();
+      if (serverRepos && serverRepos.length > 0) {
+        setRepositories(serverRepos as unknown as Repository[]);
+        setReposLoading(false);
+        return;
+      }
+    } catch {
+      // Fallback
+    }
+    await new Promise((res) => setTimeout(res, 400));
     setRepositories(MOCK_REPOS);
     setReposLoading(false);
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, selectRepository, repositories, fetchRepositories, reposLoading }}>
+    <AuthContext.Provider
+      value={{
+        ...state,
+        login,
+        loginDemo,
+        loginWithEmail,
+        registerWithEmail,
+        logout,
+        selectRepository,
+        repositories,
+        fetchRepositories,
+        reposLoading,
+        toggleDemoMode,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

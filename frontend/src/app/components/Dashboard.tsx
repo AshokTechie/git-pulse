@@ -1,8 +1,11 @@
+import { useState, useEffect } from 'react';
 import { GitCommit, GitPullRequest, FolderGit2, AlertCircle, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getDashboardData } from '../../lib/api';
 
 export function Dashboard() {
-  const kpis = [
+  const [loading, setLoading] = useState(false);
+  const [kpis, setKpis] = useState([
     {
       label: 'Total Contributions',
       value: '1,247',
@@ -35,9 +38,9 @@ export function Dashboard() {
       icon: AlertCircle,
       color: 'from-purple-accent to-github-green',
     },
-  ];
+  ]);
 
-  const contributionData = [
+  const [contributionData, setContributionData] = useState([
     { date: 'Mon', commits: 45, prs: 12, reviews: 8 },
     { date: 'Tue', commits: 52, prs: 15, reviews: 10 },
     { date: 'Wed', commits: 38, prs: 9, reviews: 6 },
@@ -45,7 +48,7 @@ export function Dashboard() {
     { date: 'Fri', commits: 44, prs: 14, reviews: 9 },
     { date: 'Sat', commits: 22, prs: 5, reviews: 3 },
     { date: 'Sun', commits: 18, prs: 4, reviews: 2 },
-  ];
+  ]);
 
   const activityData = [
     { month: 'Jan', activity: 320 },
@@ -55,6 +58,32 @@ export function Dashboard() {
     { month: 'May', activity: 550 },
     { month: 'Jun', activity: 630 },
   ];
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await getDashboardData('30d');
+        if (res && res.kpis) {
+          const iconMap: Record<string, any> = {
+            'Total Contributions': { icon: GitCommit, color: 'from-github-green to-cyan-glow' },
+            'Pull Requests Merged': { icon: GitPullRequest, color: 'from-purple-accent to-blue-accent' },
+            'Active Repositories': { icon: FolderGit2, color: 'from-blue-accent to-cyan-glow' },
+            'Open Issues': { icon: AlertCircle, color: 'from-purple-accent to-github-green' },
+          };
+          setKpis(
+            res.kpis.map((k: any) => ({
+              ...k,
+              icon: iconMap[k.label]?.icon || GitCommit,
+              color: iconMap[k.label]?.color || 'from-github-green to-cyan-glow',
+            }))
+          );
+        }
+      } catch {
+        // Fallback to default mock data seamlessly
+      }
+    }
+    loadData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -123,15 +152,15 @@ export function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-semibold">Activity Trend</h3>
-              <p className="text-sm text-muted-foreground">Last 6 months</p>
+              <p className="text-sm text-muted-foreground">6-month engineering velocity</p>
             </div>
             <TrendingUp className="size-5 text-cyan-glow" />
           </div>
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={activityData}>
               <defs>
-                <linearGradient id="activityGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
+                <linearGradient id="colorActivity" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.8} />
                   <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -146,107 +175,9 @@ export function Dashboard() {
                   color: '#e8e8f0',
                 }}
               />
-              <Area type="monotone" dataKey="activity" stroke="#06b6d4" fillOpacity={1} fill="url(#activityGradient)" />
+              <Area type="monotone" dataKey="activity" stroke="#06b6d4" fillOpacity={1} fill="url(#colorActivity)" />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="p-6 rounded-xl bg-card border border-card-border backdrop-blur-sm shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">Team Productivity Score</h3>
-          <div className="flex items-center justify-center">
-            <div className="relative size-40">
-              <svg className="size-full -rotate-90">
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  stroke="rgba(255,255,255,0.1)"
-                  strokeWidth="12"
-                  fill="none"
-                />
-                <circle
-                  cx="80"
-                  cy="80"
-                  r="70"
-                  stroke="#2ea043"
-                  strokeWidth="12"
-                  fill="none"
-                  strokeDasharray={`${(85 / 100) * 440} 440`}
-                  strokeLinecap="round"
-                  className="transition-all duration-1000"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center flex-col">
-                <span className="text-3xl font-bold">85</span>
-                <span className="text-sm text-muted-foreground">Score</span>
-              </div>
-            </div>
-          </div>
-          <p className="text-center text-sm text-muted-foreground mt-4">Excellent performance this month</p>
-        </div>
-
-        <div className="p-6 rounded-xl bg-card border border-card-border backdrop-blur-sm shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">Top Contributors</h3>
-          <div className="space-y-3">
-            {[
-              { name: 'Sarah Chen', commits: 234, avatar: '🦄' },
-              { name: 'Alex Kumar', commits: 189, avatar: '🚀' },
-              { name: 'Jamie Lee', commits: 156, avatar: '⭐' },
-            ].map((contributor, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-accent">
-                <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-full bg-gradient-to-br from-purple-accent to-blue-accent flex items-center justify-center text-lg">
-                    {contributor.avatar}
-                  </div>
-                  <div>
-                    <p className="font-medium">{contributor.name}</p>
-                    <p className="text-xs text-muted-foreground">{contributor.commits} commits</p>
-                  </div>
-                </div>
-                <TrendingUp className="size-4 text-github-green" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="p-6 rounded-xl bg-gradient-to-br from-purple-accent/10 to-blue-accent/10 border border-purple-accent/20 backdrop-blur-sm shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 rounded-lg bg-purple-accent/20">
-              <Activity className="size-5 text-purple-accent" />
-            </div>
-            <h3 className="text-lg font-semibold">AI Engineering Score</h3>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Code Quality</span>
-                <span className="text-github-green">92%</span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-github-green" style={{ width: '92%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Velocity</span>
-                <span className="text-purple-accent">88%</span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-purple-accent" style={{ width: '88%' }}></div>
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Collaboration</span>
-                <span className="text-cyan-glow">95%</span>
-              </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-cyan-glow" style={{ width: '95%' }}></div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

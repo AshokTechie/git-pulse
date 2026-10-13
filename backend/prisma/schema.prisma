@@ -1,0 +1,529 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL_SQLITE")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum PrRange {
+  SEVEN_DAYS
+  THIRTY_DAYS
+  NINETY_DAYS
+  ONE_YEAR
+}
+
+enum SyncStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum SyncType {
+  REPOSITORY
+  COMMITS
+  PULL_REQUESTS
+  ISSUES
+  WORKFLOWS
+  SECURITY
+  METRICS
+}
+
+enum AnomalyType {
+  ACTIVITY_DROP
+  COMMIT_SPIKE
+  PR_BACKLOG
+  CI_FAILURE_SPIKE
+  REVIEW_DELAY
+  SECURITY_INCREASE
+}
+
+enum AnomalySeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AnomalyStatus {
+  OPEN
+  ACKED
+  RESOLVED
+  DISMISSED
+}
+
+enum InsightCategory {
+  RECOMMENDATION
+  TECHNICAL_DEBT
+  CI
+  SECURITY
+  ANOMALY
+  BOTTLENECK
+}
+
+enum InsightSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum InsightStatus {
+  OPEN
+  ACKED
+  DISMISSED
+  RESOLVED
+}
+
+enum AlertType {
+  DEPENDABOT
+  CODE_SCANNING
+  SECRET_SCANNING
+}
+
+enum AlertSeverity {
+  NOTE
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ---------------------------------------------------------------------------
+// Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String          @id @default(cuid())
+  githubId     Int?            @unique
+  githubLogin  String?         @unique
+  name         String?
+  email        String?         @unique
+  passwordHash String?
+  avatarUrl    String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  accounts     GitHubAccount[]
+  sessions     Session[]
+  repositories Repository[]
+}
+
+model GitHubAccount {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubId             Int      @unique
+  login                String
+  name                 String?
+  email                String?
+  avatarUrl            String?
+  accessTokenEncrypted String
+  tokenType            String?
+  scope                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Organization {
+  id       String       @id @default(cuid())
+  name     String
+  login    String       @unique
+  repos    Repository[]
+}
+
+model Repository {
+  id                 String             @id @default(cuid())
+  name               String
+  fullName           String             @unique
+  description        String?
+  url                String?
+  htmlUrl            String?
+  defaultBranch      String             @default("main")
+  githubId           Int                @unique
+  githubApiId        Int?
+  private            Boolean            @default(false)
+  fork               Boolean            @default(false)
+  stars              Int                @default(0)
+  watchers           Int                @default(0)
+  forksCount         Int                @default(0)
+  openIssuesCount    Int                @default(0)
+  primaryLanguage    String?
+  archived           Boolean            @default(false)
+  disabled           Boolean            @default(false)
+  visibility         String?
+  pushedAt           DateTime?
+  lastCommitSyncedAt DateTime?
+  lastSyncedAt       DateTime?
+  syncStatus         String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  ownerId            String?
+  owner              User?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  organizationId     String?
+  organization       Organization?      @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  pullRequests       PullRequest[]
+  issues             Issue[]
+  workflows          Workflow[]
+  workflowRuns       WorkflowRun[]
+  commits            Commit[]
+  commitFiles        CommitFile[]
+  branches           Branch[]
+  deployments        Deployment[]
+  securityAlerts     SecurityAlert[]
+  healthScores       HealthScore[]
+  repositoryMetrics  RepositoryMetric[]
+  teamMetrics        TeamMetric[]
+  aiInsights         AiInsight[]
+  anomalies          Anomaly[]
+  syncs              RepositorySync[]
+}
+
+model Developer {
+  id               String            @id @default(cuid())
+  githubId         Int?              @unique
+  login            String            @unique
+  name             String?
+  email            String?
+  avatarUrl        String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  commits          Commit[]
+  authoredPrs      PullRequest[]     @relation("PrAuthor")
+  reviews          PullRequestReview[]
+  developerMetrics DeveloperMetric[]
+}
+
+model Commit {
+  id           String       @id @default(cuid())
+  sha          String       @unique
+  message      String
+  authoredAt   DateTime
+  additions    Int          @default(0)
+  deletions    Int          @default(0)
+  repositoryId String
+  repository   Repository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  authorId     String?
+  author       Developer?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  commitFiles  CommitFile[]
+
+  @@index([repositoryId, authoredAt])
+}
+
+model CommitFile {
+  id           String     @id @default(cuid())
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  commitId     String?
+  commit       Commit?    @relation(fields: [commitId], references: [id], onDelete: Cascade)
+  path         String
+  additions    Int        @default(0)
+  deletions    Int        @default(0)
+
+  @@index([repositoryId, path])
+}
+
+model PullRequest {
+  id           String              @id @default(cuid())
+  number       Int
+  title        String
+  body         String?
+  bodyUrl      String?
+  state        String
+  url          String?
+  githubId     Int                 @unique
+  htmlUrl      String?
+  diffUrl      String?
+  patchUrl     String?
+  baseRefName  String?
+  headRefName  String?
+  merged       Boolean             @default(false)
+  mergedAt     DateTime?
+  closedAt     DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  repositoryId String
+  repository   Repository          @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  authorId     String?
+  author       Developer?          @relation("PrAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  reviews      PullRequestReview[]
+
+  @@index([repositoryId, state])
+  @@index([repositoryId, createdAt])
+}
+
+model PullRequestReview {
+  id            String      @id @default(cuid())
+  githubId      Int?        @unique
+  pullRequestId String
+  pullRequest   PullRequest @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  reviewerId    String?
+  reviewer      Developer?  @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+  state         String
+  submittedAt   DateTime?
+  body              String?
+  commitId          String?
+  authorAssociation String?
+
+  @@index([pullRequestId])
+  @@index([reviewerId])
+}
+
+model Issue {
+  id           String         @id @default(cuid())
+  number       Int
+  title        String
+  body         String?
+  bodyUrl      String?
+  state        String
+  url          String?
+  githubId     Int            @unique
+  htmlUrl      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  closedAt     DateTime?
+  repositoryId String
+  repository   Repository     @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  comments     IssueComment[]
+
+  @@unique([repositoryId, number])
+  @@index([repositoryId, state])
+}
+
+model IssueComment {
+  id        String   @id @default(cuid())
+  githubId  Int?     @unique
+  issueId   String
+  issue     Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  body      String?
+  createdAt DateTime @default(now())
+}
+
+model Branch {
+  id           String     @id @default(cuid())
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  name         String
+  headSha      String?
+  isDefault    Boolean    @default(false)
+  protected    Boolean    @default(false)
+  updatedAt    DateTime   @default(now())
+
+  @@unique([repositoryId, name])
+}
+
+model Deployment {
+  id           String     @id @default(cuid())
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  state        String
+  environment  String     @default("production")
+  createdAt    DateTime   @default(now())
+
+  @@index([repositoryId, createdAt])
+}
+
+model Workflow {
+  id           String        @id @default(cuid())
+  name         String
+  nodeId       String?       @unique
+  path         String?
+  status       String?
+  conclusion   String?
+  url          String?
+  htmlUrl      String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  event        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  repositoryId String
+  repository   Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  runs         WorkflowRun[]
+}
+
+model WorkflowRun {
+  id           String     @id @default(cuid())
+  githubId     Int?       @unique
+  repositoryId String
+  repository   Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  workflowId   String?
+  workflow     Workflow?  @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+  name         String?
+  conclusion   String?
+  status       String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  failedJobs   Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([repositoryId, createdAt])
+}
+
+model SecurityAlert {
+  id                 String        @id @default(cuid())
+  githubId           Int?          @unique
+  repositoryId       String
+  repository         Repository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  type               AlertType
+  severity           AlertSeverity
+  state              String
+  title              String?
+  summary            String?
+  packageName        String?
+  externalIdentifier String?
+  createdAt          DateTime      @default(now())
+
+  @@index([repositoryId, state])
+}
+
+model HealthScore {
+  id                   String     @id
+  repositoryId         String
+  repository           Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  range                PrRange
+  score                Float
+  breakdown            Json
+  technicalDebt        Float?
+  criticalFiles        Int?
+  staleIssues          Int?
+  outdatedDependencies Int?
+  busFactor            Json?
+  calculatedAt         DateTime   @default(now())
+
+  @@unique([repositoryId, range])
+}
+
+model RepositoryMetric {
+  id                     String     @id @default(cuid())
+  repositoryId           String
+  repository             Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  range                  PrRange
+  commits                Int        @default(0)
+  contributors           Int        @default(0)
+  openedPullRequests     Int        @default(0)
+  mergedPullRequests     Int        @default(0)
+  closedPullRequests     Int        @default(0)
+  openPullRequests       Int        @default(0)
+  openedIssues           Int        @default(0)
+  closedIssues           Int        @default(0)
+  openIssues             Int        @default(0)
+  stars                  Int        @default(0)
+  forks                  Int        @default(0)
+  watchers               Int        @default(0)
+  commitFrequencyPerDay  Float      @default(0)
+  prMergeRate            Float?
+  averagePrAgeHours      Float?
+  averageReviewTimeHours Float?
+  cycleTimeHours         Float?
+  healthScore            Float?
+  calculatedAt           DateTime   @default(now())
+
+  @@unique([repositoryId, range])
+}
+
+model DeveloperMetric {
+  id                 String     @id @default(cuid())
+  developerId        String
+  developer          Developer  @relation(fields: [developerId], references: [id], onDelete: Cascade)
+  scope              String
+  repositoryId       String?
+  range              PrRange
+  commits            Int        @default(0)
+  pullRequests       Int        @default(0)
+  mergedPullRequests Int        @default(0)
+  reviews            Int        @default(0)
+  approvals          Int        @default(0)
+  changeRequests     Int        @default(0)
+  issuesClosed       Int        @default(0)
+  linesAdded         Int        @default(0)
+  linesRemoved       Int        @default(0)
+  activeDays         Int        @default(0)
+  score              Float      @default(0)
+  scoreBreakdown     Json?
+  calculatedAt       DateTime   @default(now())
+
+  @@unique([developerId, scope, repositoryId, range])
+}
+
+model TeamMetric {
+  id                   String      @id @default(cuid())
+  scope                String
+  repositoryId         String?
+  repository           Repository? @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  range                PrRange
+  activeCollaborations Int         @default(0)
+  totalReviews         Int         @default(0)
+  totalMembers         Int         @default(0)
+  crossTeamReviews     Int         @default(0)
+  reviewNetwork        Json
+  bottlenecks          Json
+  reviewConcentration  Json
+  calculatedAt         DateTime    @default(now())
+
+  @@unique([scope, repositoryId, range])
+}
+
+model AiInsight {
+  id           String          @id @default(cuid())
+  repositoryId String
+  repository   Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  category     InsightCategory
+  severity     InsightSeverity
+  status       InsightStatus   @default(OPEN)
+  title        String
+  description  String?
+  evidence     Json?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([repositoryId, status])
+}
+
+model Anomaly {
+  id               String          @id @default(cuid())
+  repositoryId     String
+  repository       Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  type             AnomalyType
+  severity         AnomalySeverity
+  status           AnomalyStatus   @default(OPEN)
+  metric           String
+  currentValue     Float
+  baselineValue    Float
+  deviationPercent Float
+  detail           Json?
+  detectedAt       DateTime        @default(now())
+
+  @@index([repositoryId, status])
+}
+
+model RepositorySync {
+  id             String      @id @default(cuid())
+  repositoryId   String
+  repository     Repository  @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  syncType       SyncType?
+  type           SyncType?
+  status         SyncStatus
+  startedAt      DateTime    @default(now())
+  completedAt    DateTime?
+  finishedAt     DateTime?
+  error          String?
+  itemsProcessed Int         @default(0)
+
+  @@index([repositoryId, status])
+}

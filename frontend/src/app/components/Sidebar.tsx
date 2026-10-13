@@ -1,4 +1,16 @@
-import { LayoutDashboard, Activity, FolderGit2, Users, Sparkles, GitBranch, Shield, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Activity,
+  FolderGit2,
+  Users,
+  Sparkles,
+  GitBranch,
+  Shield,
+  Rocket,
+  HeartPulse,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
@@ -13,6 +25,8 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
     { id: 'contributions', label: 'Contributions', icon: Activity },
     { id: 'repositories', label: 'Repositories', icon: FolderGit2 },
     { id: 'health', label: 'Repo Health', icon: Shield },
+    { id: 'dora', label: 'DORA Metrics', icon: Rocket },
+    { id: 'burnout', label: 'Workload & Pace', icon: HeartPulse },
     { id: 'developers', label: 'Developer Insights', icon: Users },
     { id: 'team', label: 'Team Collaboration', icon: GitBranch },
     { id: 'ai-insights', label: 'AI Insights', icon: Sparkles },
@@ -44,7 +58,7 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
         </button>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto no-scrollbar">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -54,7 +68,7 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
               onClick={() => onViewChange(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
                 isActive
-                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg font-medium'
                   : 'text-sidebar-foreground hover:bg-sidebar-accent'
               }`}
             >
@@ -70,9 +84,9 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
           <div className="p-3 rounded-lg bg-gradient-to-br from-purple-accent/10 to-blue-accent/10 border border-purple-accent/20">
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="size-4 text-purple-accent" />
-              <span className="text-sm font-medium">AI Assistant</span>
+              <span className="text-sm font-medium">AI Copilot</span>
             </div>
-            <p className="text-xs text-muted-foreground">Get instant insights powered by AI</p>
+            <p className="text-xs text-muted-foreground">Click the Copilot button anytime to ask questions</p>
           </div>
         )}
       </div>

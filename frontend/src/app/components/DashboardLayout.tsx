@@ -8,6 +8,9 @@ import { DeveloperInsights } from './DeveloperInsights';
 import { AIInsights } from './AIInsights';
 import { TeamCollaboration } from './TeamCollaboration';
 import { RepositoryHealth } from './RepositoryHealth';
+import { DoraMetrics } from './DoraMetrics';
+import { BurnoutAnalytics } from './BurnoutAnalytics';
+import { AICopilotDrawer } from './AICopilotDrawer';
 
 export function DashboardLayout() {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -22,6 +25,8 @@ export function DashboardLayout() {
       case 'ai-insights': return <AIInsights />;
       case 'team': return <TeamCollaboration />;
       case 'health': return <RepositoryHealth />;
+      case 'dora': return <DoraMetrics />;
+      case 'burnout': return <BurnoutAnalytics />;
       default: return <Dashboard />;
     }
   };
@@ -34,11 +39,13 @@ export function DashboardLayout() {
         collapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
         <TopBar />
         <main className="flex-1 overflow-auto p-6 md:p-8">
           {renderView()}
         </main>
+        {/* Floating AI Copilot Drawer */}
+        <AICopilotDrawer />
       </div>
     </div>
   );
